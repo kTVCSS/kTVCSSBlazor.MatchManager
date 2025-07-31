@@ -1,8 +1,14 @@
 using kTVCSSBlazor.Db;
 using kTVCSSBlazor.MatchManager.Services;
+using NLog;
+using NLog.Web;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+LogManager.Setup().LoadConfigurationFromFile("nlog.config").GetCurrentClassLogger();
+
+builder.Host.UseNLog();
 
 builder.Services.AddSignalR(options =>
 {

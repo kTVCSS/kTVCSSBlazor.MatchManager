@@ -7,6 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="NLog" Version="6.0.2" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="6.0.2" />
+    <PackageReference Include="NLog.Web" Version="6.0.2" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\kTVCSS.Db\kTVCSS.Db\kTVCSS.Db.csproj" />
     <ProjectReference Include="..\..\kTVCSS.Models\kTVCSS.Models.csproj" />
   </ItemGroup>
