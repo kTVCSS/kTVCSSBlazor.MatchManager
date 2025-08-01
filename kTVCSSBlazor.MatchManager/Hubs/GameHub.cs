@@ -8,16 +8,15 @@ namespace kTVCSSBlazor.MatchManager.Hubs
 {
     public class GameHub(IConfiguration configuration, ILogger<GameHub> logger, IDbContextFactory<EFContext> factory, IRepository repo) : Hub
     {
-        // Словарь с connectionId и данными игрока
         public static ConcurrentDictionary<string, User> Players = new ConcurrentDictionary<string, User>();
-        public static int GetCurrentPlayersCount => Players.Count;
-
-        private bool _isChecking = false;
-
+        public static int GetCurrentPlayersCount() => Players.Count;
         private IConfiguration _configuration { get; set; } = configuration;
         private ILogger<GameHub> _logger { get; set; } = logger;
+        public static List<Mix> Mixes = [];
         private IDbContextFactory<EFContext> _factory { get; set; } = factory;
         private IRepository _repo { get; set; } = repo;
+
+        public static Dictionary<string, User> GetPlayers() => Players.ToDictionary();
 
         public async Task SendConnectResult(GameHubConnectResult result, User player)
         {
@@ -58,7 +57,17 @@ namespace kTVCSSBlazor.MatchManager.Hubs
 
                     if (await Tools.OnConnect.IsPlayerPlayingAsync(player.SteamId, _configuration))
                     {
+                        Players[connectionId].IsPlaying = true;
+
                         await SendConnectResult(GameHubConnectResult.AlreadyPlaying, player);
+
+                        var pim = Mixes.FirstOrDefault(m => m.MixPlayers.Any(p => p.Id == player.Id));
+
+                        if (pim is not null)
+                        {
+                            await Clients.Caller.SendAsync("GetMixRoom", pim.Guid.ToString());
+                        }
+
                         return;
                     }
 
@@ -67,6 +76,8 @@ namespace kTVCSSBlazor.MatchManager.Hubs
                         await SendConnectResult(GameHubConnectResult.MixesDisabled, player);
                         return;
                     }
+
+                    player.StartSearchDateTime = DateTime.Now;
 
                     Players.AddOrUpdate(connectionId, player, (key, old) => player);
 
