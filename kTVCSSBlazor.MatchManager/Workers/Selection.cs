@@ -23,9 +23,9 @@ namespace kTVCSSBlazor.MatchManager.Workers
 
                 var players = GameHub.GetPlayers();
 
-                if (players.Count >= 10)
+                if (players.Where(x => !x.Value.IsPlaying).Count() >= 10)
                 {
-                    await CreateMatchAsync(players.OrderBy(x => x.Value.StartSearchDateTime).Take(10).ToDictionary());
+                    await CreateMatchAsync(players.Where(x => !x.Value.IsPlaying).OrderBy(x => x.Value.StartSearchDateTime).Take(10).ToDictionary());
                 }
 
                 if (stoppingToken.IsCancellationRequested)
