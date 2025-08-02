@@ -1,5 +1,7 @@
 using kTVCSSBlazor.Db;
+using kTVCSSBlazor.MatchManager.Hubs;
 using kTVCSSBlazor.MatchManager.Services;
+using kTVCSSBlazor.MatchManager.Workers;
 using NLog;
 using NLog.Web;
 using System.Text.Json.Serialization;
@@ -40,11 +42,23 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddHostedService<Selection>();
+
 var app = builder.Build();
+
+app.MapGet("/api/getmixbyguid", (string guid) =>
+{
+    return GameHub.Mixes.FirstOrDefault(x => x.Guid.ToString().Equals(guid, StringComparison.CurrentCultureIgnoreCase));
+});
+
+app.MapGet("/api/getplayerscount", () =>
+{
+    return GameHub.GetCurrentPlayersCount();
+});
 
 app.UseCors("OnlyDevkTVCSS");
 
-app.UseDomainRestriction(["dev.ktvcss.ru", "localhost:5001"]);
+app.UseDomainRestriction(["ktvcss.ru", "dev.ktvcss.ru", "localhost:5001"]);
 
 app.UseStaticFiles(new StaticFileOptions() { ServeUnknownFileTypes = true, DefaultContentType = "application/octet-stream" });
 

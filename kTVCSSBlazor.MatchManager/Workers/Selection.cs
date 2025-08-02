@@ -5,7 +5,9 @@ using kTVCSSBlazor.MatchManager.Hubs;
 using kTVCSSBlazor.MatchManager.Tools;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using System.Data;
+using Telegram.Bot;
 
 namespace kTVCSSBlazor.MatchManager.Workers
 {
@@ -14,10 +16,13 @@ namespace kTVCSSBlazor.MatchManager.Workers
         private ILogger<Selection> _logger { get; set; } = logger;
         private IConfiguration _configuration { get; set; } = configuration;
         private IHubContext<GameHub> _hub { get; set; } = hub;
+        private Telegram.Bot.TelegramBotClient botClient;
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (stoppingToken.IsCancellationRequested)
+            botClient = new Telegram.Bot.TelegramBotClient(_configuration.GetValue<string>("tg_alert_token"));
+
+            while (!stoppingToken.IsCancellationRequested)
             {
                 int delay = _configuration.GetValue<int>("selection_timer_delay");
 
@@ -130,13 +135,29 @@ namespace kTVCSSBlazor.MatchManager.Workers
 
             GameHub.Mixes.Add(mix);
 
-            var tg = players.Values.Select(x => x.TelegramId);
-
-            // отправить сообщение о найденной игре
+            SendAlertsToTelegram(players.Values.Select(x => x.TelegramId).ToArray(), mix.Guid.ToString());
 
             foreach (var player in players)
             {
                 GameHub.Players[player.Key].IsPlaying = true;
+            }
+        }
+
+        private async Task SendAlertsToTelegram(string[] ids, string guid)
+        {
+            foreach (var id in ids)
+            {
+                if (!string.IsNullOrEmpty(id))
+                {
+                    try
+                    {
+                        await botClient.SendMessage(new Telegram.Bot.Types.ChatId(long.Parse(id)), $"Игра найдена!\r\nhttps://ktvcss.ru/mixroom/{guid}");
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex.ToString());
+                    }
+                }
             }
         }
 

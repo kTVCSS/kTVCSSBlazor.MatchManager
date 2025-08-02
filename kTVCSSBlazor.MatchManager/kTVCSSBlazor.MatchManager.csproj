@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="NLog" Version="6.0.2" />
+    <PackageReference Include="NLog.Database" Version="6.0.2" />
     <PackageReference Include="NLog.Extensions.Logging" Version="6.0.2" />
     <PackageReference Include="NLog.Web" Version="6.0.2" />
     <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.2" />

@@ -1,6 +1,8 @@
-﻿using kTVCSS.Models.Models;
+﻿using Dapper;
+using kTVCSS.Models.Models;
 using kTVCSSBlazor.Db;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 
@@ -13,8 +15,6 @@ namespace kTVCSSBlazor.MatchManager.Hubs
         private IConfiguration _configuration { get; set; } = configuration;
         private ILogger<GameHub> _logger { get; set; } = logger;
         public static List<Mix> Mixes = [];
-        private IDbContextFactory<EFContext> _factory { get; set; } = factory;
-        private IRepository _repo { get; set; } = repo;
 
         public static Dictionary<string, User> GetPlayers() => Players.ToDictionary();
 
@@ -23,15 +23,20 @@ namespace kTVCSSBlazor.MatchManager.Hubs
             if (player is not null)
             {
                 _logger.LogInformation($"sended connect result {result.ToString()} to {player.Name}");
+
+                if (result == GameHubConnectResult.AlreadyPlaying)
+                {
+                    using (var db = new SqlConnection(configuration.GetConnectionString("db")))
+                    {
+                        var guid = await db.QueryFirstOrDefaultAsync<string>($"SELECT GUID FROM MixesAllowedPlayers WHERE STEAMID = '{player.SteamId}'");
+
+                        await Clients.Caller.SendAsync("JoinRoom", guid);
+                    }
+                }
             }
             else
             {
                 _logger.LogInformation($"sended connect result {result.ToString()} to unknown (no data)");
-            }
-
-            if (result == GameHubConnectResult.AlreadyPlaying)
-            {
-                // send room id or match id
             }
 
             await Clients.Caller.SendAsync("GetConnectResult", result);
